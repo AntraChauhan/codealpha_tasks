@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Search Users - SocialConnect{% endblock %}
+
+{% block content %}
+<div class="search-wrap">
+    <div class="page-title">🔍 Search Users</div>
+
+    <form method="GET" class="mb-4">
+        <div class="input-group">
+            <input type="text" name="q" value="{{ query|default:'' }}" class="form-control" placeholder="Search by username…">
+            <button class="btn btn-primary">Search</button>
+        </div>
+    </form>
+
+    {% for user in users %}
+    <div class="user-card">
+        <a href="{% url 'profiles:profile' user.username %}">
+            {% if user.profile.profile_picture %}
+            <img src="{{ user.profile.profile_picture.url }}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;" alt="">
+            {% else %}
+            <span class="user-card-avatar">{{ user.username|first|upper }}</span>
+            {% endif %}
+        </a>
+        <div style="flex:1;">
+            <a href="{% url 'profiles:profile' user.username %}" style="font-weight:600;font-size:14px;color:var(--text);text-decoration:none;">{{ user.username }}</a>
+        </div>
+        {% if request.user.is_authenticated %}
+        <a href="{% url 'profiles:follow_user' user.username %}" class="btn-follow-sm">Follow</a>
+        {% else %}
+        <a href="{% url 'accounts:login' %}" class="btn-follow-sm">Follow</a>
+        {% endif %}
+    </div>
+    {% empty %}
+    <div class="text-center text-muted py-4" style="font-size:14px;">
+        {% if query %}No users found for "{{ query }}".{% else %}Enter a username to search.{% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

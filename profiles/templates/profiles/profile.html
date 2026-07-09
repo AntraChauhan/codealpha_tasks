@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}{{ profile.user.username }} - SocialConnect{% endblock %}
+
+{% block content %}
+<div style="max-width:935px;margin:0 auto;padding:0 20px;">
+
+    <div class="profile-header">
+        <div class="profile-pic-wrap">
+            {% if profile.profile_picture %}
+            <img src="{{ profile.profile_picture.url }}" class="profile-pic" alt="">
+            {% else %}
+            <div class="profile-pic-placeholder">{{ profile.user.username|first|upper }}</div>
+            {% endif %}
+        </div>
+
+        <div class="profile-info">
+            <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+                <h2 class="mb-0">{{ profile.user.username }}</h2>
+                <div class="profile-actions">
+                    {% if request.user.is_authenticated %}
+                        {% if request.user == profile.user %}
+                        <a href="{% url 'profiles:edit_profile' %}" class="btn-profile-action">Edit Profile</a>
+                        <a href="{% url 'posts:create_post' %}" class="btn-profile-action primary">+ New Post</a>
+                        {% else %}
+                        <a href="{% url 'profiles:follow_user' profile.user.username %}" class="btn-profile-action primary">
+                            {% if request.user in profile.followers.all %}Unfollow{% else %}Follow{% endif %}
+                        </a>
+                        <a href="{% url 'posts:chat' profile.user.username %}" class="btn-profile-action">Message</a>
+                        {% endif %}
+                    {% else %}
+                        <a href="{% url 'accounts:login' %}" class="btn-profile-action primary">Follow</a>
+                        <a href="{% url 'accounts:login' %}" class="btn-profile-action">Message</a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="profile-stats">
+                <div class="stat-item"><strong>{{ posts_count }}</strong><span>posts</span></div>
+                <div class="stat-item"><strong>{{ followers_count }}</strong><span>followers</span></div>
+                <div class="stat-item"><strong>{{ following_count }}</strong><span>following</span></div>
+                <div class="stat-item"><strong>{{ total_likes }}</strong><span>likes</span></div>
+            </div>
+
+            {% if profile.bio %}
+            <p class="profile-bio">{{ profile.bio }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="border-top:1px solid var(--border);padding-top:20px;margin-bottom:16px;text-align:center;">
+        <span style="font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;">📷 Posts</span>
+    </div>
+
+    {% if posts %}
+    <div class="posts-grid">
+        {% for post in posts %}
+        {% if post.image %}
+        <a href="{% url 'posts:post_detail' post.id %}" class="grid-post">
+            <img src="{{ post.image.url }}" alt="">
+            <div class="grid-post-overlay">
+                <span>❤️ {{ post.likes.count }}</span>
+                <span>💬 {{ post.comments.count }}</span>
+            </div>
+        </a>
+        {% else %}
+        <a href="{% url 'posts:post_detail' post.id %}" class="grid-post-text">
+            {{ post.content|truncatechars:80 }}
+        </a>
+        {% endif %}
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center text-muted py-5">
+        <div style="font-size:3rem;margin-bottom:12px;">📷</div>
+        <p>No posts yet.</p>
+        {% if request.user.is_authenticated and request.user == profile.user %}
+        <a href="{% url 'posts:create_post' %}" class="btn-profile-action primary">Share your first photo</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <a href="{% url 'posts:home' %}" style="display:inline-block;margin-top:16px;color:var(--text-muted);font-size:13px;text-decoration:none;">← Back to Feed</a>
+</div>
+{% endblock %}
