@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block title %}Feed - SocialConnect{% endblock %}
+
+{% block content %}
+<div class="main-layout">
+
+  <!-- Feed -->
+  <div class="feed-col">
+
+    {% if posts %}
+    {% for post in posts %}
+    <div class="post-card">
+
+      <!-- Header -->
+      <div class="post-header">
+        <a href="{% url 'profiles:profile' post.author.username %}">
+          {% if post.author.profile.profile_picture %}
+          <img src="{{ post.author.profile.profile_picture.url }}" class="post-avatar" alt="">
+          {% else %}
+          <span class="post-avatar-placeholder">{{ post.author.username|first|upper }}</span>
+          {% endif %}
+        </a>
+        <div>
+          <a href="{% url 'profiles:profile' post.author.username %}" class="post-author-name">{{ post.author.username }}</a>
+        </div>
+        <span class="post-time">{{ post.created_at|timesince }} ago</span>
+        {% if request.user.is_authenticated and request.user == post.author %}
+        <div class="dropdown ms-2">
+          <button class="post-more-btn" data-bs-toggle="dropdown">⋯</button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="{% url 'posts:edit_post' post.id %}">✏ Edit</a></li>
+            <li><a class="dropdown-item text-danger" href="{% url 'posts:delete_post' post.id %}" onclick="return confirm('Delete this post?')">🗑 Delete</a></li>
+          </ul>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Image -->
+      {% if post.image %}
+      <div class="post-image-wrap">
+        <img src="{{ post.image.url }}" alt="Post" data-like="{% url 'posts:like_post' post.id %}" class="post-img-dbl">
+      </div>
+      {% endif %}
+
+      <!-- Actions -->
+      <div class="post-actions-bar">
+        {% if request.user.is_authenticated %}
+          <a href="{% url 'posts:like_post' post.id %}" class="action-btn like-btn {% if request.user in post.likes.all %}liked{% endif %}">
+            {% if request.user in post.likes.all %}❤️{% else %}🤍{% endif %}
+          </a>
+        {% else %}
+          <a href="{% url 'accounts:login' %}" class="action-btn">🤍</a>
+        {% endif %}
+        <a href="{% url 'posts:post_detail' post.id %}" class="action-btn">💬</a>
+        <button class="action-btn" onclick="copyLink('{% url 'posts:post_detail' post.id %}')">🔗</button>
+        {% if post.image %}
+        <a href="{{ post.image.url }}" download class="action-btn">📥</a>
+        {% endif %}
+        {% if request.user.is_authenticated and request.user != post.author %}
+        <a href="{% url 'posts:chat' post.author.username %}" class="action-btn">✉️</a>
+        {% endif %}
+      </div>
+
+      <div class="post-likes">{{ post.likes.count }} like{{ post.likes.count|pluralize }}</div>
+
+      <div class="post-caption">
+        <a href="{% url 'profiles:profile' post.author.username %}" class="cap-author">{{ post.author.username }}</a>
+        {{ post.content }}
+      </div>
+
+      {% with post.comments.count as cc %}
+      {% if cc > 2 %}
+      <a href="{% url 'posts:post_detail' post.id %}" class="view-comments-link">View all {{ cc }} comments</a>
+      {% endif %}
+      {% endwith %}
+
+      <div class="comments-section">
+        {% for comment in post.comments.all|slice:"-2:" %}
+        <div class="comment-row">
+          <a href="{% url 'profiles:profile' comment.user.username %}" class="c-author">{{ comment.user.username }}</a>
+          {{ comment.content }}
+          <span class="c-time">{{ comment.created_at|timesince }} ago</span>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if request.user.is_authenticated %}
+      <form method="POST" action="{% url 'posts:add_comment' post.id %}" class="comment-form">
+        {% csrf_token %}
+        <input type="text" name="content" class="comment-input" placeholder="Add a comment…" required>
+        <button type="submit" class="comment-submit">Post</button>
+      </form>
+      {% else %}
+      <div class="comment-form" style="color:var(--text-muted);font-size:13px;">
+        <a href="{% url 'accounts:login' %}" style="color:#0095f6;font-weight:600;text-decoration:none;">Log in</a>&nbsp;to comment.
+      </div>
+      {% endif %}
+
+    </div>
+    {% endfor %}
+
+    {% if page_obj.has_other_pages %}
+    <nav class="mt-2 mb-4">
+      <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">← Prev</a></li>
+        {% endif %}
+        <li class="page-item active"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next →</a></li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="post-card p-4 text-center text-muted">
+      No posts yet.
+      {% if request.user.is_authenticated %}
+      <a href="{% url 'posts:create_post' %}">Create the first post!</a>
+      {% else %}
+      <a href="{% url 'accounts:register' %}">Sign up</a> to get started.
+      {% endif %}
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar-col">
+
+    {% if request.user.is_authenticated %}
+    <div class="d-flex align-items-center gap-3 mb-4 px-1">
+      <a href="{% url 'profiles:profile' request.user.username %}">
+        {% if request.user.profile.profile_picture %}
+        <img src="{{ request.user.profile.profile_picture.url }}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #dbdbdb;" alt="">
+        {% else %}
+        <span class="post-avatar-placeholder" style="width:52px;height:52px;font-size:1.2rem;">{{ request.user.username|first|upper }}</span>
+        {% endif %}
+      </a>
+      <div>
+        <a href="{% url 'profiles:profile' request.user.username %}" style="font-weight:600;font-size:14px;color:var(--text);text-decoration:none;">{{ request.user.username }}</a>
+        <div style="font-size:13px;color:var(--text-muted);">{{ request.user.get_full_name|default:"Your profile" }}</div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if suggestions %}
+    <div class="suggestions-card">
+      <h6>{% if request.user.is_authenticated %}Suggested for you{% else %}People to follow{% endif %}</h6>
+      {% for person in suggestions %}
+      <div class="suggestion-item">
+        <div class="d-flex align-items-center gap-2">
+          <a href="{% url 'profiles:profile' person.username %}">
+            {% if person.profile.profile_picture %}
+            <img src="{{ person.profile.profile_picture.url }}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;" alt="">
+            {% else %}
+            <span class="suggestion-avatar">{{ person.username|first|upper }}</span>
+            {% endif %}
+          </a>
+          <div>
+            <a href="{% url 'profiles:profile' person.username %}" class="suggestion-name">{{ person.username }}</a>
+            <div style="font-size:12px;color:var(--text-muted);">Suggested</div>
+          </div>
+        </div>
+        {% if request.user.is_authenticated %}
+        <a href="{% url 'profiles:follow_user' person.username %}" class="btn-follow-sm">Follow</a>
+        {% else %}
+        <a href="{% url 'accounts:login' %}" class="btn-follow-sm">Follow</a>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="GET" action="{% url 'posts:search_posts' %}" class="mt-3">
+      <div class="input-group input-group-sm">
+        <input type="text" name="q" class="form-control" placeholder="Search posts…">
+        <button class="btn btn-outline-secondary">Go</button>
+      </div>
+    </form>
+
+  </div>
+</div>
+{% endblock %}

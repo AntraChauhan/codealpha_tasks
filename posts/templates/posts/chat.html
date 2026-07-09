@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Chat with {{ other_user.username }} - SocialConnect{% endblock %}
+
+{% block content %}
+<h2 class="page-title">💬 Chat with {{ other_user.username }}</h2>
+
+<div class="card">
+    <div class="card-body">
+        <div class="chat-messages">
+            {% for msg in messages %}
+            <div class="d-flex {% if msg.sender == request.user %}justify-content-end{% endif %}">
+                <div class="chat-bubble {% if msg.sender == request.user %}sent{% else %}received{% endif %}">
+                    {{ msg.message }}
+                    <div class="small opacity-75 mt-1">{{ msg.created_at|time:"g:i A" }}</div>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-center text-muted">No messages yet. Say hello!</p>
+            {% endfor %}
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+            <div class="input-group">
+                {{ form.message }}
+                <button class="btn btn-primary">Send</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<a href="{% url 'profiles:profile' other_user.username %}" class="btn btn-secondary mt-3">← Back to Profile</a>
+{% endblock %}

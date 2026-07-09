@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Post by {{ post.author.username }} - SocialConnect{% endblock %}
+
+{% block content %}
+<div style="max-width:680px;margin:0 auto;">
+    <div class="post-card">
+
+        <div class="post-header">
+            <a href="{% url 'profiles:profile' post.author.username %}">
+                {% if post.author.profile.profile_picture %}
+                <img src="{{ post.author.profile.profile_picture.url }}" class="post-avatar" alt="">
+                {% else %}
+                <span class="post-avatar-placeholder">{{ post.author.username|first|upper }}</span>
+                {% endif %}
+            </a>
+            <div>
+                <a href="{% url 'profiles:profile' post.author.username %}" class="post-author-name">{{ post.author.username }}</a>
+            </div>
+            <span class="post-time">{{ post.created_at|timesince }} ago</span>
+            {% if request.user.is_authenticated and request.user == post.author %}
+            <div class="dropdown ms-2">
+                <button class="post-more-btn" data-bs-toggle="dropdown">⋯</button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="{% url 'posts:edit_post' post.id %}">✏ Edit</a></li>
+                    <li><a class="dropdown-item text-danger" href="{% url 'posts:delete_post' post.id %}" onclick="return confirm('Delete this post?')">🗑 Delete</a></li>
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if post.image %}
+        <div class="post-image-wrap">
+            <img src="{{ post.image.url }}" alt="Post image">
+        </div>
+        {% endif %}
+
+        <div class="post-actions-bar">
+            {% if request.user.is_authenticated %}
+            <a href="{% url 'posts:like_post' post.id %}" class="action-btn {% if request.user in post.likes.all %}liked{% endif %}">
+                {% if request.user in post.likes.all %}❤️{% else %}🤍{% endif %}
+            </a>
+            {% else %}
+            <a href="{% url 'accounts:login' %}" class="action-btn">🤍</a>
+            {% endif %}
+            <button class="action-btn" onclick="copyLink('{% url 'posts:post_detail' post.id %}')">🔗</button>
+            {% if post.image %}
+            <a href="{{ post.image.url }}" download class="action-btn">📥</a>
+            {% endif %}
+        </div>
+
+        <div class="post-likes">{{ post.likes.count }} like{{ post.likes.count|pluralize }}</div>
+
+        <div class="post-caption">
+            <a href="{% url 'profiles:profile' post.author.username %}" class="cap-author">{{ post.author.username }}</a>
+            {{ post.content }}
+        </div>
+
+        <div class="comments-section" style="max-height:none;">
+            {% for comment in post.comments.all %}
+            <div class="comment-row">
+                <a href="{% url 'profiles:profile' comment.user.username %}" class="c-author">{{ comment.user.username }}</a>
+                {{ comment.content }}
+                <span class="c-time">{{ comment.created_at|timesince }} ago</span>
+            </div>
+            {% empty %}
+            <p class="text-muted" style="font-size:13px;padding:8px 0;">No comments yet.</p>
+            {% endfor %}
+        </div>
+
+        {% if request.user.is_authenticated %}
+        <form method="POST" action="{% url 'posts:add_comment' post.id %}" class="comment-form">
+            {% csrf_token %}
+            <input type="text" name="content" class="comment-input" placeholder="Add a comment…" required>
+            <button type="submit" class="comment-submit">Post</button>
+        </form>
+        {% else %}
+        <div class="comment-form" style="color:var(--text-muted);font-size:13px;">
+            <a href="{% url 'accounts:login' %}" style="color:#0095f6;font-weight:600;text-decoration:none;">Log in</a>&nbsp;to comment.
+        </div>
+        {% endif %}
+    </div>
+
+    <a href="{% url 'posts:home' %}" style="display:inline-block;margin-top:12px;color:var(--text-muted);font-size:13px;text-decoration:none;">← Back to Feed</a>
+</div>
+{% endblock %}

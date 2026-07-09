@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications - SocialConnect{% endblock %}
+
+{% block content %}
+<h2 class="page-title">🔔 Notifications</h2>
+
+<div class="card">
+    <div class="card-body p-0">
+        {% for notification in notifications %}
+        <div class="notification-item {% if not notification.is_read %}unread{% endif %}">
+            <p class="mb-1">{{ notification.message }}</p>
+            <small class="text-muted">{{ notification.created_at|timesince }} ago</small>
+        </div>
+        {% empty %}
+        <div class="p-4 text-center text-muted">No notifications yet.</div>
+        {% endfor %}
+    </div>
+</div>
+
+<a href="{% url 'posts:home' %}" class="btn btn-secondary mt-3">← Back to Feed</a>
+{% endblock %}
